@@ -8,8 +8,8 @@ class Game:
     red = (255, 0, 0)
     background_color = (50, 50, 50)
 
-    size_x = 5
-    size_y = 5
+    size_x = 10
+    size_y = 15
 
     # 0 - null, 1 - full, 2 - X
     board = np.zeros((size_x, size_y), np.int8)
@@ -19,11 +19,11 @@ class Game:
     number_of_y_series = 0
 
     # TODO implement loading boards from file
-    x_numbers = ((4, 3, 2, 1, 3))
-    y_numbers = [[5], [4], [3], [2, 2], [3, 1]]
+    x_numbers = ([4], [3], [2], [1], [3])
+    y_numbers = [[9], [9, 1], [1, 9], [7, 7], [12, 2], [10], [10], [10], [10], [10]]
     # y_numbers = (2, 4, (3, 1), (1, 1), 1)
 
-    cell_size = 80
+    cell_size = 40
 
     def print_board(self):
         self.game_display.fill(self.background_color)
@@ -59,7 +59,7 @@ class Game:
         size = len(numbers) - n
         possibilities = self.size_y - start_point - (size - 1) + 1
         for o in range(size):
-            possibilities -= numbers[size - o - 1]
+            possibilities -= numbers[size + n - o - 1]
         # end_point = start_point + numbers[n]
         possible = True
         for p in range(possibilities):
@@ -69,7 +69,7 @@ class Game:
                     break
             if possible:
                 for b in range(numbers[n]):
-                    self.y_set[b + start_point] = 1
+                    self.y_set[b + start_point + p] = 1
                 if size - 1 != 0:
                     self.check_y(y, (n + 1), start_point + p + numbers[n] + 1)
                 elif self.sum_of_y(y) == self.sum_of_y_set():
@@ -90,6 +90,7 @@ class Game:
         for o in range(self.size_y):
             if self.board[y, o] == 1:
                 self.print_cell(y, o)
+        # TODO think of a way of printing only NEW cells
 
     def check_x(self, x, n=0, start_point=0):
         pass
@@ -113,7 +114,7 @@ class Game:
                 if event.type == pg.QUIT:
                     done = True
                 # print(event)
-            for y in range(self.size_y):
+            for y in range(self.size_x):
                 # for y in range(5):
                 self.y_set = np.zeros(self.size_y, np.int8)
                 self.y_series = np.zeros(self.size_y, np.int8)
@@ -121,5 +122,4 @@ class Game:
                 self.check_y(y)
                 self.correct_y(y)
                 self.update_y(y)
-                # TODO think of a way of printing only NEW cells
                 pg.display.update()
