@@ -6,24 +6,29 @@ class Game:
     white = (255, 255, 255)
     black = (0, 0, 0)
     red = (255, 0, 0)
+    blue = (0, 0, 128)
     background_color = (50, 50, 50)
 
-    size_x = 10
-    size_y = 15
+    size_x = 5
+    size_y = 5
 
-    # 0 - null, 1 - full, 2 - X
+    # 0 -> null, 1 -> full, -1 -> X
     board = np.zeros((size_x, size_y), np.int8)
 
     y_set = np.zeros(size_y, np.int8)
     y_series = np.zeros(size_y, np.int8)
     number_of_y_series = 0
 
+    x_set = np.zeros(size_x, np.int8)
+    x_series = np.zeros(size_x, np.int8)
+    number_of_x_series = 0
+
     # TODO implement loading boards from file
-    x_numbers = ([4], [3], [2], [1], [3])
-    y_numbers = [[9], [9, 1], [1, 9], [7, 7], [12, 2], [10], [10], [10], [10], [10]]
+    x_numbers = [[3], [1, 3], [3], [1, 1], [1]]
+    y_numbers = [[2, 2], [1], [3], [2], [3]]
     # y_numbers = (2, 4, (3, 1), (1, 1), 1)
 
-    cell_size = 40
+    cell_size = 80
 
     def print_board(self):
         self.game_display.fill(self.background_color)
@@ -40,6 +45,17 @@ class Game:
         pg.draw.rect(self.game_display, self.red,
                      pg.Rect(x * (self.cell_size + 1), y * (self.cell_size + 1), self.cell_size, self.cell_size))
 
+    def print_x_on_cell(self, x, y):
+        start = (x * self.cell_size + self.cell_size // 4 + x, y * self.cell_size + self.cell_size // 4 + y)
+        end = (x * self.cell_size + self.cell_size - self.cell_size // 4 + x,
+               y * self.cell_size + self.cell_size - self.cell_size // 4 + y)
+        pg.draw.line(self.game_display, self.blue, start, end, self.cell_size // 10)
+        start = (
+        x * self.cell_size + self.cell_size - self.cell_size // 4 + x, y * self.cell_size + self.cell_size // 4 + y)
+        end = (
+        x * self.cell_size + self.cell_size // 4 + x, y * self.cell_size + self.cell_size - self.cell_size // 4 + y)
+        pg.draw.line(self.game_display, self.blue, start, end, self.cell_size // 10)
+
     def sum_of_y(self, y):
         result = 0
         numbers = self.y_numbers[y]
@@ -47,22 +63,23 @@ class Game:
             result += numbers[i]
         return result
 
-    def sum_of_y_set(self):
+    def sum_of_y_set(self, y):
         result = 0
         for i in range(self.size_y):
-            result += self.y_set[i]
+            if self.y_set[i] == 1:
+                result += 1
+            elif self.board[y, i] == 1:
+                result += 1
         return result
 
     def check_y(self, y, n=0, start_point=0):
-        # TODO check where the bug is
         numbers = self.y_numbers[y]
         size = len(numbers) - n
         possibilities = self.size_y - start_point - (size - 1) + 1
         for o in range(size):
             possibilities -= numbers[size + n - o - 1]
-        # end_point = start_point + numbers[n]
-        possible = True
         for p in range(possibilities):
+            possible = True
             for b in range(numbers[n]):
                 if self.board[y, start_point + b + p] == -1:
                     possible = False
@@ -72,7 +89,7 @@ class Game:
                     self.y_set[b + start_point + p] = 1
                 if size - 1 != 0:
                     self.check_y(y, (n + 1), start_point + p + numbers[n] + 1)
-                elif self.sum_of_y(y) == self.sum_of_y_set():
+                elif self.sum_of_y(y) == self.sum_of_y_set(y):
                     for b in range(self.size_y):
                         self.y_series[b] += self.y_set[b]
                     self.number_of_y_series += 1
@@ -90,11 +107,64 @@ class Game:
         for o in range(self.size_y):
             if self.board[y, o] == 1:
                 self.print_cell(y, o)
-        # TODO think of a way of printing only NEW cells
+            elif self.board[y, o] == -1:
+                self.print_x_on_cell(y, o)
+
+    def sum_of_x(self, x):
+        result = 0
+        numbers = self.x_numbers[x]
+        for i in range(len(numbers)):
+            result += numbers[i]
+        return result
+
+    def sum_of_x_set(self, x):
+        result = 0
+        for i in range(self.size_x):
+            if self.x_set[i] == 1:
+                result += 1
+            elif self.board[i, x] == 1:
+                result += 1
+        return result
 
     def check_x(self, x, n=0, start_point=0):
-        pass
-        # TODO copy-paste from check_y (change y to x)
+        numbers = self.x_numbers[x]
+        size = len(numbers) - n
+        possibilities = self.size_x - start_point - (size - 1) + 1
+        for o in range(size):
+            possibilities -= numbers[size + n - o - 1]
+        for p in range(possibilities):
+            possible = True
+            for b in range(numbers[n]):
+                if self.board[start_point + b + p, x] == -1:
+                    possible = False
+                    break
+            if possible:
+                for b in range(numbers[n]):
+                    self.x_set[b + start_point + p] = 1
+                if size - 1 != 0:
+                    self.check_x(x, (n + 1), start_point + p + numbers[n] + 1)
+                elif self.sum_of_x(x) == self.sum_of_x_set(x):
+                    for b in range(self.size_x):
+                        self.x_series[b] += self.x_set[b]
+                    self.number_of_x_series += 1
+                for b in range(numbers[n]):
+                    self.x_set[b + start_point + p] = 0
+
+    def correct_x(self, x):
+        if self.number_of_x_series != 0:
+            for o in range(self.size_x):
+                if self.x_series[o] == self.number_of_x_series:
+                    self.board[o, x] = 1
+                elif self.x_series[o] == 0:
+                    self.board[o, x] = -1
+
+    def update_x(self, x):
+        if self.number_of_y_series != 0:
+            for o in range(self.size_x):
+                if self.board[o, x] == 1:
+                    self.print_cell(o, x)
+                elif self.board[o, x] == -1:
+                    self.print_x_on_cell(o, x)
 
     def __init__(self):
         pg.init()
@@ -107,6 +177,7 @@ class Game:
 
         self.print_board()
 
+        pg.display.update()
         done = False
 
         while not done:
@@ -115,11 +186,18 @@ class Game:
                     done = True
                 # print(event)
             for y in range(self.size_x):
-                # for y in range(5):
                 self.y_set = np.zeros(self.size_y, np.int8)
                 self.y_series = np.zeros(self.size_y, np.int8)
                 self.number_of_y_series = 0
                 self.check_y(y)
                 self.correct_y(y)
                 self.update_y(y)
+                pg.display.update()
+            for x in range(self.size_y):
+                self.x_set = np.zeros(self.size_x, np.int8)
+                self.x_series = np.zeros(self.size_x, np.int8)
+                self.number_of_x_series = 0
+                self.check_x(x)
+                self.correct_x(x)
+                self.update_x(x)
                 pg.display.update()
