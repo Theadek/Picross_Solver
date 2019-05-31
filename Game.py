@@ -9,11 +9,13 @@ class Game:
     blue = (0, 0, 128)
     background_color = (50, 50, 50)
 
-    size_x = 5
-    size_y = 5
+    size_x = 10
+    size_y = 10
 
-    # 0 -> null, 1 -> full, -1 -> X
+    # 0 -> unknown, 1 -> full, -1 -> empty
     board = np.zeros((size_x, size_y), np.int8)
+
+    was_sth_corrected = False
 
     y_set = np.zeros(size_y, np.int8)
     y_series = np.zeros(size_y, np.int8)
@@ -23,12 +25,12 @@ class Game:
     x_series = np.zeros(size_x, np.int8)
     number_of_x_series = 0
 
-    # TODO implement loading boards from file
-    x_numbers = [[3], [1, 3], [3], [1, 1], [1]]
-    y_numbers = [[2, 2], [1], [3], [2], [3]]
-    # y_numbers = (2, 4, (3, 1), (1, 1), 1)
 
-    cell_size = 80
+    # TODO implement loading boards from file
+    x_numbers = [[3, 1, 3], [4, 4], [1, 6], [6], [5], [2, 1, 2], [2, 2], [2, 1], [2, 2], [1]]
+    y_numbers = [[2, 5], [2, 4], [3], [1, 1], [1, 3], [3, 1, 1], [4, 1, 1], [6], [6, 1], [4]]
+
+    cell_size = 40
 
     def print_board(self):
         self.game_display.fill(self.background_color)
@@ -98,10 +100,14 @@ class Game:
 
     def correct_y(self, y):
         for o in range(self.size_y):
-            if self.y_series[o] == self.number_of_y_series:
+            if self.y_series[o] == self.number_of_y_series and self.board[y, o] != 1:
                 self.board[y, o] = 1
-            elif self.y_series[o] == 0:
+                self.print_cell(y, o)
+                self.was_sth_corrected = True
+            elif self.y_series[o] == 0 and self.board[y, o] != -1:
                 self.board[y, o] = -1
+                self.print_x_on_cell(y, o)
+                self.was_sth_corrected = True
 
     def update_y(self, y):
         for o in range(self.size_y):
@@ -153,18 +159,14 @@ class Game:
     def correct_x(self, x):
         if self.number_of_x_series != 0:
             for o in range(self.size_x):
-                if self.x_series[o] == self.number_of_x_series:
+                if self.x_series[o] == self.number_of_x_series and self.board[o, x] != 1:
                     self.board[o, x] = 1
-                elif self.x_series[o] == 0:
-                    self.board[o, x] = -1
-
-    def update_x(self, x):
-        if self.number_of_y_series != 0:
-            for o in range(self.size_x):
-                if self.board[o, x] == 1:
                     self.print_cell(o, x)
-                elif self.board[o, x] == -1:
+                    self.was_sth_corrected = True
+                elif self.x_series[o] == 0 and self.board[o, x] != -1:
+                    self.board[o, x] = -1
                     self.print_x_on_cell(o, x)
+                    self.was_sth_corrected = True
 
     def __init__(self):
         pg.init()
@@ -179,25 +181,27 @@ class Game:
 
         pg.display.update()
         done = False
+        do_check = True
 
         while not done:
             for event in pg.event.get():
                 if event.type == pg.QUIT:
                     done = True
-                # print(event)
-            for y in range(self.size_x):
-                self.y_set = np.zeros(self.size_y, np.int8)
-                self.y_series = np.zeros(self.size_y, np.int8)
-                self.number_of_y_series = 0
-                self.check_y(y)
-                self.correct_y(y)
-                self.update_y(y)
-                pg.display.update()
-            for x in range(self.size_y):
-                self.x_set = np.zeros(self.size_x, np.int8)
-                self.x_series = np.zeros(self.size_x, np.int8)
-                self.number_of_x_series = 0
-                self.check_x(x)
-                self.correct_x(x)
-                self.update_x(x)
-                pg.display.update()
+            if do_check:
+                self.was_sth_corrected = False
+                for y in range(self.size_x):
+                    self.y_set = np.zeros(self.size_y, np.int8)
+                    self.y_series = np.zeros(self.size_y, np.int8)
+                    self.number_of_y_series = 0
+                    self.check_y(y)
+                    self.correct_y(y)
+                    pg.display.update()
+                for x in range(self.size_y):
+                    self.x_set = np.zeros(self.size_x, np.int8)
+                    self.x_series = np.zeros(self.size_x, np.int8)
+                    self.number_of_x_series = 0
+                    self.check_x(x)
+                    self.correct_x(x)
+                    pg.display.update()
+                if self.was_sth_corrected is False:
+                    do_check = False
