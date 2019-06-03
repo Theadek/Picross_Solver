@@ -1,3 +1,3 @@
 from Game import *
 
-picross = Game()
+picross = Game("board2.txt")

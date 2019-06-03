@@ -9,28 +9,13 @@ class Game:
     blue = (0, 0, 128)
     background_color = (50, 50, 50)
 
-    size_x = 10
-    size_y = 10
-
-    # 0 -> unknown, 1 -> full, -1 -> empty
-    board = np.zeros((size_x, size_y), np.int8)
-
     was_sth_corrected = False
 
-    y_set = np.zeros(size_y, np.int8)
-    y_series = np.zeros(size_y, np.int8)
-    number_of_y_series = 0
-
-    x_set = np.zeros(size_x, np.int8)
-    x_series = np.zeros(size_x, np.int8)
-    number_of_x_series = 0
-
-
     # TODO implement loading boards from file
-    x_numbers = [[3, 1, 3], [4, 4], [1, 6], [6], [5], [2, 1, 2], [2, 2], [2, 1], [2, 2], [1]]
-    y_numbers = [[2, 5], [2, 4], [3], [1, 1], [1, 3], [3, 1, 1], [4, 1, 1], [6], [6, 1], [4]]
+    x_numbers = []
+    y_numbers = []
 
-    cell_size = 40
+    cell_size = 20
 
     def print_board(self):
         self.game_display.fill(self.background_color)
@@ -92,8 +77,7 @@ class Game:
                 if size - 1 != 0:
                     self.check_y(y, (n + 1), start_point + p + numbers[n] + 1)
                 elif self.sum_of_y(y) == self.sum_of_y_set(y):
-                    for b in range(self.size_y):
-                        self.y_series[b] += self.y_set[b]
+                    self.y_series += self.y_set
                     self.number_of_y_series += 1
                 for b in range(numbers[n]):
                     self.y_set[b + start_point + p] = 0
@@ -150,8 +134,7 @@ class Game:
                 if size - 1 != 0:
                     self.check_x(x, (n + 1), start_point + p + numbers[n] + 1)
                 elif self.sum_of_x(x) == self.sum_of_x_set(x):
-                    for b in range(self.size_x):
-                        self.x_series[b] += self.x_set[b]
+                    self.x_series += self.x_set
                     self.number_of_x_series += 1
                 for b in range(numbers[n]):
                     self.x_set[b + start_point + p] = 0
@@ -168,9 +151,50 @@ class Game:
                     self.print_x_on_cell(o, x)
                     self.was_sth_corrected = True
 
-    def __init__(self):
+    def read_from_file(self, file, tolist):
+        line = file.readline()
+        number = ""
+        answer = []
+        for c in line:
+            if c == ' ':
+                answer.append(int(number))
+                number = ""
+            elif c == "\n":
+                continue
+            else:
+                number += c
+        answer.append(int(number))
+        tolist.append(answer)
+
+    def __init__(self, path):
         pg.init()
         pg.display.set_caption("PICROSS SOLVER")
+
+        file = open(path, "r")
+        x = int(file.readline())
+        y = int(file.readline())
+
+        for i in range(x):
+            self.read_from_file(file, self.x_numbers)
+
+        for i in range(y):
+            self.read_from_file(file, self.y_numbers)
+
+        file.close()
+
+        self.size_x = x
+        self.size_y = y
+
+        # 0 -> unknown, 1 -> full, -1 -> empty
+        self.board = np.zeros((self.size_x, self.size_y), np.int8)
+
+        self.y_set = np.zeros(self.size_y, np.int8)
+        self.y_series = np.zeros(self.size_y, np.int8)
+        self.number_of_y_series = 0
+
+        self.x_set = np.zeros(self.size_x, np.int8)
+        self.x_series = np.zeros(self.size_x, np.int8)
+        self.number_of_x_series = 0
 
         self.screen_width = self.cell_size * self.size_x + self.size_x - 1
         self.screen_height = self.cell_size * self.size_y + self.size_y - 1
